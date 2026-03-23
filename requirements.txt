@@ -1,0 +1,12 @@
+# LangChain packages
+langchain
+langchain-ollama
+langchain-mcp-adapters
+langchain-community
+langchain-pymupdf4llm
+
+# Other
+fastmcp
+faiss-cpu
+Pillow
+pytesseract

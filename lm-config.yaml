@@ -1,0 +1,10 @@
+main_language_model:
+  provider: ollama
+  model: qwen3.5:4b
+  base_url: http://localhost:11434/
+  key: 
+main_embedding_model:
+  provider: ollama
+  model: qwen3-embedding:0.6b
+  base_url: http://localhost:11434/
+  key: 
