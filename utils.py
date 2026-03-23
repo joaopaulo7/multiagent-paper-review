@@ -1,5 +1,6 @@
 import os
 import yaml
+from re import search, MULTILINE
 
 from langchain.chat_models import BaseChatModel, init_chat_model
 from langchain.embeddings import Embeddings, init_embeddings
@@ -29,6 +30,12 @@ def get_llm_instance(lm_type:str, embedding=False) -> BaseChatModel | Embeddings
         return init_chat_model(model=model, model_provider=provider, **lm_info)
     
 
+def get_first_title(md_text: str) -> str:
+    match = search(r'^(#{1,6})\s+(.*)', md_text, MULTILINE)
+    if match:
+        return match.group(2).strip()
+    return ""
+
 
 def load_pdf(file_path: str, chunck_size: int = 32000, image_ocr: bool = False) -> tuple[str, list[str]]:
     if image_ocr:
@@ -38,9 +45,14 @@ def load_pdf(file_path: str, chunck_size: int = 32000, image_ocr: bool = False) 
                                    mode="single",
                                    extract_images=True, 
                                    images_parser=TesseractBlobParser())
-    splitter = RecursiveCharacterTextSplitter(chunk_size=chunck_size, chunk_overlap=0)
     
-    title = loader.load()[0].metadata["title"] if "title" in loader.load()[0].metadata else ""
     content = loader.load()[0].page_content
+    title = loader.load()[0].metadata["title"]  
 
+    if not title:
+        md_title = get_first_title(content)
+        title = md_title if md_title else file_path.split("/")[-1].replace(".pdf", "")
+
+
+    splitter = RecursiveCharacterTextSplitter(chunk_size=chunck_size, chunk_overlap=0)
     return title, splitter.split_text(content)
