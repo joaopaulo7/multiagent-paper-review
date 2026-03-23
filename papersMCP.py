@@ -1,11 +1,13 @@
+from dataclasses import dataclass
+
 from fastmcp import FastMCP
 
 from langchain_community.vectorstores import FAISS
 
-from utils import get_llm_instance
+from utils import get_embedding
 
 # Set up vector store
-embeddings = get_llm_instance("main_embedding_model", embedding=True)
+embeddings = get_embedding("main_embedding_model")
 
 vector_store = FAISS.load_local("persistent_vector_store",
                                 embeddings=embeddings,
@@ -15,31 +17,37 @@ vector_store = FAISS.load_local("persistent_vector_store",
 # Set up MCP server
 mcp = FastMCP("Papers")
 
-@mcp.tool()
+
+@mcp.tool
 def search_articles(query: str) -> list[dict]:
     """Search for papers. Papers are divided into chunks."""
-    papers = []
+    papers = [{}]
     for vector, score in vector_store.similarity_search_with_relevance_scores(query, k=3):
         papers.append({
             "id": vector.id,
             "title": vector.metadata['title'],
             "area": vector.metadata['area'],
-            "score": score,
-            })
+            "score": float(score),
+            "content": ""})
     return papers
 
 
-@mcp.tool()
-def get_article_content(id: str) -> dict:
+@mcp.tool
+def get_article_content(id: str) ->  dict:
     """Get a paper's content"""
-    vector = vector_store.get_by_ids([id])[0]
+    vector = vector_store.get_by_ids([id])
+    if not vector:
+        return {}
+
+    vector = vector[0]
 
     return {
         "id": vector.id,
         "title": vector.metadata['title'],
         "area": vector.metadata['area'],
-        "content": vector.page_content,
+        "content": vector.page_content
         }
 
+
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    mcp.run(transport="http", host="127.0.0.1", port=8000)

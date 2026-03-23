@@ -28,7 +28,15 @@ def get_llm_instance(lm_type:str, embedding=False) -> BaseChatModel | Embeddings
         return init_embeddings(model=model, provider=provider, **lm_info)
     else:
         return init_chat_model(model=model, model_provider=provider, **lm_info)
-    
+
+# So that Pylance will stop complaining
+def get_chat(lm_type: str) -> BaseChatModel:
+    return get_llm_instance(lm_type=lm_type, embedding=False)
+
+def get_embedding(lm_type: str) -> Embeddings:
+    return get_llm_instance(lm_type=lm_type, embedding=True)
+
+
 
 def get_first_title(md_text: str) -> str:
     match = search(r'^(#{1,6})\s+(.*)', md_text, MULTILINE)
