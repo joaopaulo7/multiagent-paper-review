@@ -19,15 +19,17 @@ def get_llm_instance(lm_type:str, embedding=False) -> BaseChatModel | Embeddings
     model = lm_info.pop("model")
     provider = lm_info.pop("provider")
     key = lm_info.pop("key")
+    key_env_var = lm_info.pop("key_env_var")
 
     if key:
-        print(f"{provider.upper()}_API_KEY")
-        os.environ[f"{provider.upper()}_API_KEY"] = key
+        key_env_var = key_env_var if key_env_var else f"{provider.upper()}_API_KEY"
+        os.environ[key_env_var] = key
 
     if embedding:
         return init_embeddings(model=model, provider=provider, **lm_info)
     else:
         return init_chat_model(model=model, model_provider=provider, **lm_info)
+
 
 # So that Pylance will stop complaining
 def get_chat(lm_type: str) -> BaseChatModel:
@@ -45,7 +47,7 @@ def get_first_title(md_text: str) -> str:
     return ""
 
 
-def load_pdf(file_path: str, chunck_size: int = 32000, image_ocr: bool = False) -> tuple[str, list[str]]:
+def load_pdf(file_path: str, chunck_size: int = 32000, image_ocr: bool = False) -> tuple[str, list[str] | str, dict]:
     if image_ocr:
         loader = PyMuPDF4LLMLoader(file_path, mode="single")
     else:
@@ -61,6 +63,8 @@ def load_pdf(file_path: str, chunck_size: int = 32000, image_ocr: bool = False) 
         md_title = get_first_title(content)
         title = md_title if md_title else file_path.split("/")[-1].replace(".pdf", "")
 
-
-    splitter = RecursiveCharacterTextSplitter(chunk_size=chunck_size, chunk_overlap=0)
-    return title, splitter.split_text(content)
+    if chunck_size > 0:
+        splitter = RecursiveCharacterTextSplitter(chunk_size=chunck_size, chunk_overlap=0)
+        return title, splitter.split_text(content), loader.load()[0].metadata
+    else:
+        return title, content, loader.load()[0].metadata
