@@ -5,13 +5,13 @@ from re import search, MULTILINE
 from langchain.chat_models import BaseChatModel, init_chat_model
 from langchain.embeddings import Embeddings, init_embeddings
 from langchain_pymupdf4llm import PyMuPDF4LLMLoader
-from langchain_community.document_loaders.parsers import TesseractBlobParser
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
+CONFIG_FILE = os.environ['LM_CONFIG_FILE']
 
 def get_llm_instance(lm_type:str, embedding=False) -> BaseChatModel | Embeddings: 
-    with open("lm-config.yaml", "r") as in_file:
+    with open(CONFIG_FILE, "r") as in_file:
         lm_config = yaml.safe_load(in_file)
     
     lm_info = lm_config[lm_type]
@@ -47,14 +47,8 @@ def get_first_title(md_text: str) -> str:
     return ""
 
 
-def load_pdf(file_path: str, chunck_size: int = 32000, image_ocr: bool = False) -> tuple[str, list[str] | str, dict]:
-    if image_ocr:
-        loader = PyMuPDF4LLMLoader(file_path, mode="single")
-    else:
-        loader = PyMuPDF4LLMLoader(file_path, 
-                                   mode="single",
-                                   extract_images=True, 
-                                   images_parser=TesseractBlobParser())
+def load_pdf(file_path: str, chunck_size: int = 32000) -> tuple[str, list[str] | str, dict]:
+    loader = PyMuPDF4LLMLoader(file_path, mode="single")
     
     content = loader.load()[0].page_content
     title = loader.load()[0].metadata["title"]  

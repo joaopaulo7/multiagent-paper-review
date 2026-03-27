@@ -1,0 +1,26 @@
+services:
+  server:
+    build:
+      context: ./papers-server
+    container_name: papers-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./lm-config.yaml:/app/lm-config.yaml:ro
+    environment:
+      - LM_CONFIG_FILE=lm-config.yaml
+      - SERVER_IP=0.0.0.0
+    restart: on-failure
+
+  client:
+    build:
+      context: ./paper-export-client
+    container_name: paper-export-client
+    depends_on:
+      - server
+    volumes:
+      - ./lm-config.yaml:/app/lm-config.yaml:ro
+    environment:
+      - SERVER_URL=http://server:8000
+      - LM_CONFIG_FILE=lm-config.yaml
+    restart: on-failure

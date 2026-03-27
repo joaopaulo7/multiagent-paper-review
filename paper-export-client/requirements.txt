@@ -1,0 +1,11 @@
+# LangChain packages
+langchain
+langchain-openai
+langchain-ollama
+langchain-google-genai
+langchain-mcp-adapters
+langchain-community
+langchain-pymupdf4llm
+
+# Other
+jupyter

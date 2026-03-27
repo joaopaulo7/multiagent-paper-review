@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import os
 
 from fastmcp import FastMCP
 
@@ -49,5 +50,7 @@ def get_article_content(id: str) ->  dict:
         }
 
 
+
+SERVER_IP = os.environ["SERVER_IP"]
 if __name__ == "__main__":
-    mcp.run(transport="http", host="127.0.0.1", port=8000)
+    mcp.run(transport="http", host=SERVER_IP, port=8000)
