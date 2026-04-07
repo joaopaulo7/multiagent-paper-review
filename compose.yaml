@@ -1,26 +1,54 @@
+x-common: &common
+  volumes:
+    - "./lm-config.yaml:/app/lm-config.yaml:ro"
+  restart: on-failure
+
 services:
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_MODELS=/root/.ollama/models 
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - /usr/share/ollama/.ollama/models:/root/.ollama/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
   server:
+    <<: *common
     build:
       context: ./papers-server
     container_name: papers-server
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./lm-config.yaml:/app/lm-config.yaml:ro
     environment:
-      - LM_CONFIG_FILE=lm-config.yaml
       - SERVER_IP=0.0.0.0
-    restart: on-failure
+      - LM_CONFIG_FILE=lm-config.yaml
+    depends_on:
+      - ollama
 
   client:
+    <<: *common
     build:
       context: ./paper-export-client
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
     container_name: paper-export-client
     depends_on:
       - server
-    volumes:
-      - ./lm-config.yaml:/app/lm-config.yaml:ro
+      - ollama
     environment:
       - SERVER_URL=http://server:8000
       - LM_CONFIG_FILE=lm-config.yaml
-    restart: on-failure
+
+volumes:
+  ollama_data:
