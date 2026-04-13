@@ -22,15 +22,16 @@ mcp = FastMCP("Papers")
 @mcp.tool
 def search_articles(query: str) -> list[dict]:
     """Search for papers. Papers are divided into chunks."""
-    papers = [{}]
-    for vector, score in vector_store.similarity_search_with_relevance_scores(query, k=3):
+    papers = []
+    for vector, score in vector_store.similarity_search_with_relevance_scores(query[:2048], k=3):
         papers.append({
             "id": vector.id,
+            "chunk": vector.metadata['chunk'],
             "title": vector.metadata['title'],
             "area": vector.metadata['area'],
             "score": float(score),
             "content": ""})
-    return papers
+    return papers if papers else [{}]
 
 
 @mcp.tool

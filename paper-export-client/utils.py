@@ -47,7 +47,7 @@ def get_first_title(md_text: str) -> str:
     return ""
 
 
-def load_pdf(file_path: str, chunck_size: int = 32000) -> tuple[str, list[str] | str, dict]:
+def load_pdf(file_path: str, chunck_size: int = 4096) -> tuple[str, list[str] | str, dict]:
     loader = PyMuPDF4LLMLoader(file_path, mode="single")
     
     content = loader.load()[0].page_content
@@ -58,7 +58,7 @@ def load_pdf(file_path: str, chunck_size: int = 32000) -> tuple[str, list[str] |
         title = md_title if md_title else file_path.split("/")[-1].replace(".pdf", "")
 
     if chunck_size > 0:
-        splitter = RecursiveCharacterTextSplitter(chunk_size=chunck_size, chunk_overlap=0)
+        splitter = RecursiveCharacterTextSplitter(chunk_size=chunck_size, chunk_overlap=chunck_size//10)
         return title, splitter.split_text(content), loader.load()[0].metadata
     else:
         return title, content, loader.load()[0].metadata

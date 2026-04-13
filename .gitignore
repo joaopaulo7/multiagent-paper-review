@@ -209,3 +209,4 @@ __marimo__/
 
 # Other
 lm-config.yaml
+llamacpp/models/*

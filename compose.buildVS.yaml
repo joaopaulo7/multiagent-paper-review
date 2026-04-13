@@ -1,14 +1,9 @@
-x-common: &common
-  volumes:
-    - "./lm-config.yaml:/app/lm-config.yaml:ro"
-  restart: on-failure
-
 services:
   llamacpp:
     image: ghcr.io/ggml-org/llama.cpp:server-cuda
     container_name: llama-cpp-cuda
     ports:
-      - "8082:8082"
+      - 8082:8082
     volumes:
       - ./llamacpp/models:/models
       - ./llamacpp/llama_models_config.ini:/llama_models_config.ini
@@ -26,29 +21,19 @@ services:
       --host 0.0.0.0
 
   server:
-    <<: *common
-    build:
-      context: ./papers-server
+    image: jupyter/base-notebook
     container_name: papers-server
+    ports:
+      - 8888:8888
     environment:
       - SERVER_IP=0.0.0.0
       - LM_CONFIG_FILE=lm-config.yaml
     depends_on:
       - llamacpp
-
-  client:
-    <<: *common
-    build:
-      context: ./paper-export-client
-      extra_hosts:
-        - "host.docker.internal:host-gateway"
-    container_name: paper-export-client
-    depends_on:
-      - server
-      - llamacpp
-    environment:
-      - SERVER_URL=http://server:8000
-      - LM_CONFIG_FILE=lm-config.yaml
+    volumes:
+      - "./papers-server:/home/jovyan/work/papers-server"
+      - "./lm-config.yaml:/home/jovyan/work/papers-server/lm-config.yaml:ro"
+    restart: on-failure
 
 volumes:
   llamacpp_data:
