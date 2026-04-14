@@ -27,12 +27,12 @@ services:
       - 8888:8888
     environment:
       - SERVER_IP=0.0.0.0
-      - LM_CONFIG_FILE=lm-config.yaml
+      - LM_CONFIG_FILE=../lm-config.yaml
     depends_on:
       - llamacpp
     volumes:
       - "./papers-server:/home/jovyan/work/papers-server"
-      - "./lm-config.yaml:/home/jovyan/work/papers-server/lm-config.yaml:ro"
+      - "./lm-config.yaml:/home/jovyan/work/lm-config.yaml:ro"
     restart: on-failure
 
 volumes:

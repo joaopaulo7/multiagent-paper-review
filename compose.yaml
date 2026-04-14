@@ -24,6 +24,7 @@ services:
       --models-dir /models
       --models-preset /llama_models_config.ini
       --host 0.0.0.0
+      --parallel 2
 
   server:
     <<: *common
@@ -38,17 +39,19 @@ services:
 
   client:
     <<: *common
-    build:
-      context: ./paper-export-client
-      extra_hosts:
-        - "host.docker.internal:host-gateway"
-    container_name: paper-export-client
+    image: jupyter/base-notebook
+    container_name: papers-client
+    ports:
+      - 8888:8888
     depends_on:
       - server
       - llamacpp
     environment:
       - SERVER_URL=http://server:8000
-      - LM_CONFIG_FILE=lm-config.yaml
+      - LM_CONFIG_FILE=../lm-config.yaml
+    volumes:
+      - "./paper-export-client:/home/jovyan/work/paper-export-client"
+      - "./lm-config.yaml:/home/jovyan/work/lm-config.yaml:ro"
 
 volumes:
   llamacpp_data:
