@@ -210,3 +210,4 @@ __marimo__/
 # Other
 lm-config.yaml
 llamacpp/models/*
+papers-server/vector_bd/*

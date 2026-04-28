@@ -6,7 +6,7 @@ services:
       - 8082:8082
     volumes:
       - ./llamacpp/models:/models
-      - ./llamacpp/llama_models_config.ini:/llama_models_config.ini
+      - ./llamacpp/llama_models_config_build_VS.ini:/llama_models_config_build_VS.ini
     deploy:
       resources:
         reservations:
@@ -17,7 +17,7 @@ services:
     command: >
       --port 8082
       --models-dir /models
-      --models-preset /llama_models_config.ini
+      --models-preset /llama_models_config_build_VS.ini
       --host 0.0.0.0
 
   server:
@@ -32,6 +32,7 @@ services:
       - llamacpp
     volumes:
       - "./papers-server:/home/jovyan/work/papers-server"
+      - "./common:/home/jovyan/work/common:rw"
       - "./lm-config.yaml:/home/jovyan/work/lm-config.yaml:ro"
     restart: on-failure
 
