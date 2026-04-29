@@ -9,17 +9,17 @@ sys.path.append('../common/')
 from utils import get_embedding
 
 
+# Load vector store
 DOC_DIR = "./vector_db/documents"
-DEFAULT_WINDOW_SIZE = 20000
-
-# Set up vector store
 embeddings = get_embedding("main_embedding_model")
 
 vector_store = FAISS.load_local("vector_db/FAISS_vector_store",
                                 embeddings=embeddings,
                                 allow_dangerous_deserialization=True)
 
-# chace docs
+
+# cache docs (simulating DB caching of most accessed files)
+# Since its is a small number of documents, all can be cached
 MAX_LOADED_DOCS = 50
 docs_cache = {}
 for i, doc in enumerate(os.scandir(DOC_DIR)):
@@ -35,11 +35,14 @@ for i, doc in enumerate(os.scandir(DOC_DIR)):
 mcp = FastMCP("Papers")
 
 
+DEFAULT_WINDOW_SIZE = 20000
 def get_content_around_center(doc_id: str,
                               center: int,
                               window_size: int = DEFAULT_WINDOW_SIZE
                               ) -> str:
-    
+    """Get the content around a desired paper chunk center.
+    Shifts window to fit if it overflows out of any of the ends of the document.
+    """
     if doc_id in docs_cache:
         doc = docs_cache[doc_id]
     else:
@@ -64,9 +67,10 @@ def get_content_around_center(doc_id: str,
 
 @mcp.tool
 def search_articles(query: str) -> list[dict]:
-    """Search for papers. Papers are divided into chunks."""
+    """Search for papers based on semantic similarity."""
     papers = []
-    results = vector_store.similarity_search_with_relevance_scores(query[:2048], k=3)
+    results = vector_store.similarity_search_with_relevance_scores(query[:2048],
+                                                                   k=3)
     for vector, score in results:
         papers.append({
             "id": vector.id,
@@ -79,7 +83,7 @@ def search_articles(query: str) -> list[dict]:
 
 @mcp.tool
 def get_article_content(id: str) ->  dict | str:
-    """Get a paper's content"""
+    """Get a paper's larger context around a chunk."""
     vector = vector_store.get_by_ids([id])
     if not vector:
         return "No papers with the provided ID."
