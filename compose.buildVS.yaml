@@ -1,0 +1,40 @@
+services:
+  llamacpp:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: llama-cpp-cuda
+    ports:
+      - 8082:8082
+    volumes:
+      - ./llamacpp/models:/models
+      - ./llamacpp/llama_models_config_build_VS.ini:/llama_models_config_build_VS.ini
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: >
+      --port 8082
+      --models-dir /models
+      --models-preset /llama_models_config_build_VS.ini
+      --host 0.0.0.0
+
+  server:
+    image: jupyter/base-notebook
+    container_name: papers-server
+    ports:
+      - 8888:8888
+    environment:
+      - SERVER_IP=0.0.0.0
+      - LM_CONFIG_FILE=../lm-config.yaml
+    depends_on:
+      - llamacpp
+    volumes:
+      - "./papers-server:/home/jovyan/work/papers-server"
+      - "./common:/home/jovyan/work/common:rw"
+      - "./lm-config.yaml:/home/jovyan/work/lm-config.yaml:ro"
+    restart: on-failure
+
+volumes:
+  llamacpp_data:

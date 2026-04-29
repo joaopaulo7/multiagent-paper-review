@@ -2,6 +2,8 @@ import os
 import yaml
 from re import search, MULTILINE, compile, sub
 
+import pymupdf.layout
+
 from langchain.chat_models import BaseChatModel, init_chat_model
 from langchain.embeddings import Embeddings, init_embeddings
 from langchain_pymupdf4llm import PyMuPDF4LLMLoader
@@ -9,7 +11,10 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 #LLM INSTANCING
 CONFIG_FILE = os.environ['LM_CONFIG_FILE']
-CHAR_TO_TOKEN_RATIO = 1 
+TOKEN_CHAR_RATIO = 1/1.5
+
+def count_tokens(text: str) -> int:
+    return len(text)*TOKEN_CHAR_RATIO
 
 def get_llm_instance(lm_type:str, embedding=False) -> BaseChatModel | Embeddings: 
     with open(CONFIG_FILE, "r") as in_file:
@@ -59,10 +64,17 @@ def remove_links(content: str) -> str:
     content = sub(r"www\.\S+", "", content)
     return sub(r"https://\S+", "", content)
 
-def clean_content(content: str, extract_tables: bool = True) -> str:
+def remove_references(content: str) -> str:
+    if "References" in content:
+        return "References".join(content.split("References")[:-1])
+    else:
+        return content
+
+def clean_content(content: str, extract_tables: bool = False) -> str:
     functions = [
         remove_multi_line_breaks,
-        remove_links
+        remove_links,
+        remove_references
     ]
     if not extract_tables:
         functions.insert(0, strip_markdown_tables)
@@ -76,25 +88,41 @@ def get_first_title(md_text: str) -> str:
         return match.group(2).strip()
     return ""
 
-def load_pdf(file_path: str, chunk_size: int = 2048, extract_tables: bool = True) -> tuple[str, list[str] | str, dict]:
-    chunk_size *= CHAR_TO_TOKEN_RATIO
+def load_pdf(file_path: str) -> tuple[str, list[str] | str, dict]:
     loader = PyMuPDF4LLMLoader(
         file_path,
+        extract_images=False,
         mode="single",
         pages_delimiter=" ")
     
     content = loader.load()[0].page_content
-    title = loader.load()[0].metadata["title"]  
-    content = clean_content(content, extract_tables)
+    title = loader.load()[0].metadata["title"]
     
     if not title:
         md_title = get_first_title(content)
         title = md_title if md_title else file_path.split("/")[-1].replace(".pdf", "")
 
-    if chunk_size > 0:
-        splitter = RecursiveCharacterTextSplitter(
+    return title, content, loader.load()[0].metadata
+
+
+def split_document(document: str,
+                   chunk_size: int = 2048,
+                   overlap: float = 0.1,
+                   clean_document= True
+                  ) -> tuple[list[str], list[int]]:
+    
+    splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
-            chunk_overlap=chunk_size//10) # 10% overlap
-        return title, splitter.split_text(content), loader.load()[0].metadata
-    else:
-        return title, content, loader.load()[0].metadata
+            length_function=count_tokens,
+            chunk_overlap=int(chunk_size*overlap))
+
+    document = clean_content(document) if clean_document else document
+    
+    chunks = splitter.split_text(document)
+    centers = []
+    chunks_sum = 0
+    for chunk in chunks:
+        centers.append(chunks_sum + len(chunk)//2)
+        chunks_sum += len(chunk)
+    return chunks, centers
+    

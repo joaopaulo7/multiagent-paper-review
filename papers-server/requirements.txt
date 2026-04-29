@@ -9,3 +9,5 @@ langchain-pymupdf4llm
 # Other
 fastmcp
 faiss-cpu
+pymupdf-layout
+opencv-python

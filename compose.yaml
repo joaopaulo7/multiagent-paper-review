@@ -1,54 +1,58 @@
-x-common: &common
-  volumes:
-    - "./lm-config.yaml:/app/lm-config.yaml:ro"
-  restart: on-failure
-
 services:
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    environment:
-      - OLLAMA_HOST=0.0.0.0
-      - OLLAMA_MODELS=/root/.ollama/models 
+  llamacpp:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: llama-cpp-cuda
     ports:
-      - "11435:11434"
+      - "8082:8082"
     volumes:
-      - ollama_data:/root/.ollama
-      - /usr/share/ollama/.ollama/models:/root/.ollama/models
+      - ./llamacpp/models:/models
+      - ./llamacpp/llama_models_config.ini:/llama_models_config.ini
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: all
+              count: 1
               capabilities: [gpu]
-    restart: unless-stopped
+    command: >
+      --port 8082
+      --models-dir /models
+      --models-preset /llama_models_config.ini
+      --host 0.0.0.0
+      --parallel 1
 
   server:
-    <<: *common
     build:
       context: ./papers-server
     container_name: papers-server
     environment:
       - SERVER_IP=0.0.0.0
+      - SERVER_PORT=8000
       - LM_CONFIG_FILE=lm-config.yaml
     depends_on:
-      - ollama
+      - llamacpp
+    volumes:
+      - "./lm-config.yaml:/app/lm-config.yaml:ro"
+      - "./common/utils.py:/app/utils.py:ro"
+    restart: on-failure
 
   client:
-    <<: *common
-    build:
-      context: ./paper-export-client
-      extra_hosts:
-        - "host.docker.internal:host-gateway"
-    container_name: paper-export-client
+    image: jupyter/base-notebook:latest
+    container_name: papers-client
+    ports:
+      - 8888:8888
     depends_on:
       - server
-      - ollama
+      - llamacpp
     environment:
       - SERVER_URL=http://server:8000
-      - LM_CONFIG_FILE=lm-config.yaml
+      - LM_CONFIG_FILE=../lm-config.yaml
+    volumes:
+      - "./paper-export-client:/home/jovyan/work/paper-export-client"
+      - "./lm-config.yaml:/home/jovyan/work/lm-config.yaml:ro"
+      - "./common:/home/jovyan/work/common:rw"
+    restart: on-failure
+
 
 volumes:
-  ollama_data:
+  llamacpp_data:
