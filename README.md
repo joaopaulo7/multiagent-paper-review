@@ -42,7 +42,7 @@ The output schema (`Review` model) includes:
 
 Each reviewer agent has access to the MCP server tools for cross-referencing other papers in the database.
 
-### 3. Llama.cpp (LLM Backend)
+### 3. Llama.cpp (configurable)
 
 CUDA-enabled Docker container serving GGUF-format LLM models via OpenAI-compatible API:
 
@@ -59,7 +59,7 @@ CUDA-enabled Docker container serving GGUF-format LLM models via OpenAI-compatib
 
 ## Configuration
 
-**lm-config.yaml**: Defines LLM provider settings:
+**lm-config.yaml**: Defines LLM provider settings. Can be altered to run cloud model:
 ```yaml
 main_language_model:
   provider: openai
