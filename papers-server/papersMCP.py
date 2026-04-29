@@ -19,7 +19,7 @@ vector_store = FAISS.load_local("vector_db/FAISS_vector_store",
 
 
 # cache docs (simulating DB caching of most accessed files)
-# Since its is a small number of documents, all can be cached
+# Since it is a small number of documents, all can be cached
 MAX_LOADED_DOCS = 50
 docs_cache = {}
 for i, doc in enumerate(os.scandir(DOC_DIR)):
