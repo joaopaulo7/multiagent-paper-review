@@ -6,3 +6,6 @@ langchain-google-genai
 langchain-mcp-adapters
 langchain-community
 langchain-pymupdf4llm
+
+# Other
+pymupdf-layout

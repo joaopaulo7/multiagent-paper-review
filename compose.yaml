@@ -19,7 +19,7 @@ services:
       --models-dir /models
       --models-preset /llama_models_config.ini
       --host 0.0.0.0
-      --parallel 2
+      --parallel 1
 
   server:
     build:
@@ -27,6 +27,7 @@ services:
     container_name: papers-server
     environment:
       - SERVER_IP=0.0.0.0
+      - SERVER_PORT=8000
       - LM_CONFIG_FILE=lm-config.yaml
     depends_on:
       - llamacpp
@@ -49,7 +50,7 @@ services:
     volumes:
       - "./paper-export-client:/home/jovyan/work/paper-export-client"
       - "./lm-config.yaml:/home/jovyan/work/lm-config.yaml:ro"
-      - "./common:/home/jovyan/work/app/common:rw"
+      - "./common:/home/jovyan/work/common:rw"
     restart: on-failure
 
 

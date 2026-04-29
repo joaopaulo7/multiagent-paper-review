@@ -211,3 +211,4 @@ __marimo__/
 lm-config.yaml
 llamacpp/models/*
 papers-server/vector_db/*
+paper-export-client/out/*

@@ -10,12 +10,12 @@ from utils import get_embedding
 
 
 DOC_DIR = "./vector_db/documents"
-DEFAULT_WINDOW_SIZE = 16000
+DEFAULT_WINDOW_SIZE = 20000
 
 # Set up vector store
 embeddings = get_embedding("main_embedding_model")
 
-vector_store = FAISS.load_local("persistent_vector_store",
+vector_store = FAISS.load_local("vector_db/FAISS_vector_store",
                                 embeddings=embeddings,
                                 allow_dangerous_deserialization=True)
 
@@ -24,6 +24,8 @@ MAX_LOADED_DOCS = 50
 docs_cache = {}
 for i, doc in enumerate(os.scandir(DOC_DIR)):
     doc = doc.name
+    if not doc.endswith(".md"):
+        continue
     if i >= MAX_LOADED_DOCS:
         break
     with open(f"{DOC_DIR}/{doc}") as in_file:
@@ -71,7 +73,7 @@ def search_articles(query: str) -> list[dict]:
             "title": vector.metadata['title'],
             "area": vector.metadata['area'],
             "score": float(score)
-            )
+            })
     return papers if papers else [{}]
 
 
@@ -80,7 +82,7 @@ def get_article_content(id: str) ->  dict | str:
     """Get a paper's content"""
     vector = vector_store.get_by_ids([id])
     if not vector:
-        return "No paper with the provided ID."
+        return "No papers with the provided ID."
 
     vector = vector[0]
 
@@ -98,6 +100,6 @@ def get_article_content(id: str) ->  dict | str:
 
 
 SERVER_IP = os.environ["SERVER_IP"]
-SERVER_PORT = os.environ["SERVER_IP"]
+SERVER_PORT = int(os.environ["SERVER_PORT"])
 if __name__ == "__main__":
-    mcp.run(transport="http", host=SERVER_IP, port=PORT)
+    mcp.run(transport="http", host=SERVER_IP, port=SERVER_PORT)
